@@ -67,3 +67,4 @@ Chat Scholar represents a significant step towards leveraging AI to create a mor
 
 
 # GenAI-Project-ChatScholar
+<img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/1d67c256-2943-44da-8cb6-f36532200034" />
