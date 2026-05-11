@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/LangChain-121D33?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/AI%20ChatBot-FF6B00?style=for-the-badge"/>
 </p>
+
 ## Problem Statement:
 In today's digital age, students are inundated with information from textbooks, research papers, and online resources. Navigating this vast sea of knowledge and extracting meaningful insights can be overwhelming. Chat Scholar addresses this challenge by providing an AI-powered platform that simplifies academic learning and enhances the writing process.
 Context:
