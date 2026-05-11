@@ -1,33 +1,31 @@
 import os
 import re
+
 from flask import Flask, render_template, request, redirect
 from PyPDF2 import PdfReader
 
-# =========================
-# LANGCHAIN (FIXED IMPORTS)
-# =========================
+from openai import OpenAI
+
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
+
+from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.text_splitter import CharacterTextSplitter
 
-# =========================
-# OPENAI SDK
-# =========================
-from openai import OpenAI
+# ==========================================
+# OPENAI API KEY
+# ==========================================
 
-# =========================
-# API KEY
-# =========================
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# =========================
+# ==========================================
 # FLASK APP
-# =========================
+# ==========================================
+
 app = Flask(__name__)
 
 vectorstore = None
@@ -35,171 +33,338 @@ conversation_chain = None
 chat_history = []
 rubric_text = ""
 
+# ==========================================
+# DATA FOLDER
+# ==========================================
+
 DATA_DIR = "__data__"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# =========================
+# ==========================================
 # PDF TEXT EXTRACTION
-# =========================
+# ==========================================
+
 def get_pdf_text(pdf_docs):
+
     text = ""
+
     for pdf in pdf_docs:
-        pdf_reader = PdfReader(pdf)
-        for page in pdf_reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text
+
+        try:
+
+            pdf_reader = PdfReader(pdf)
+
+            for page in pdf_reader.pages:
+
+                page_text = page.extract_text()
+
+                if page_text:
+                    text += page_text
+
+        except Exception as e:
+            print("PDF Error:", e)
+
     return text
 
-# =========================
+# ==========================================
 # TEXT CHUNKING
-# =========================
+# ==========================================
+
 def get_text_chunks(text):
+
     splitter = CharacterTextSplitter(
         separator="\n",
         chunk_size=1000,
         chunk_overlap=200
     )
-    return splitter.split_text(text)
 
-# =========================
-# VECTOR STORE (FAISS)
-# =========================
+    chunks = splitter.split_text(text)
+
+    return chunks
+
+# ==========================================
+# VECTOR STORE
+# ==========================================
+
 def get_vectorstore(chunks):
-    embeddings = OpenAIEmbeddings()
-    return FAISS.from_texts(chunks, embeddings)
 
-# =========================
+    if not chunks:
+        raise ValueError("No text chunks found")
+
+    try:
+
+        embeddings = OpenAIEmbeddings()
+
+        vectorstore = FAISS.from_texts(
+            texts=chunks,
+            embedding=embeddings
+        )
+
+        return vectorstore
+
+    except Exception as e:
+
+        print("Embedding Error:", e)
+
+        raise Exception(
+            "OpenAI API Error. Check API key or billing."
+        )
+
+# ==========================================
 # CONVERSATION CHAIN
-# =========================
-def get_conversation_chain(vs):
-    llm = ChatOpenAI(model="gpt-3.5-turbo")
+# ==========================================
+
+def get_conversation_chain(vectorstore):
+
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
+        temperature=0
+    )
 
     memory = ConversationBufferMemory(
-        memory_key="chat_history",
+        memory_key='chat_history',
         return_messages=True
     )
 
-    return ConversationalRetrievalChain.from_llm(
+    conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        retriever=vs.as_retriever(),
+        retriever=vectorstore.as_retriever(),
         memory=memory
     )
 
-# =========================
-# ESSAY GRADING FUNCTION
-# =========================
-def _grade_essay(essay):
-    messages = [
-        {
-            "role": "system",
-            "content": "You are an AI grader. Grade strictly based on the rubric:\n" + rubric_text
-        },
-        {
-            "role": "user",
-            "content": essay
-        }
-    ]
+    return conversation_chain
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        temperature=0.4,
-        max_tokens=1500
-    )
+# ==========================================
+# ESSAY GRADING
+# ==========================================
 
-    result = response.choices[0].message.content
-    return re.sub(r'\n', '<br>', result)
+def grade_essay(essay):
 
-# =========================
-# ROUTES
-# =========================
+    global rubric_text
+
+    try:
+
+        messages = [
+            {
+                "role": "system",
+                "content":
+                "You are an AI essay grader. "
+                "Grade according to rubric:\n"
+                + rubric_text
+            },
+            {
+                "role": "user",
+                "content": essay
+            }
+        ]
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.4,
+            max_tokens=1500
+        )
+
+        result = response.choices[0].message.content
+
+        return re.sub(r"\n", "<br>", result)
+
+    except Exception as e:
+
+        print("Essay Error:", e)
+
+        return "OpenAI API Error. Check billing or API key."
+
+# ==========================================
+# HOME PAGE
+# ==========================================
 
 @app.route('/')
 def home():
+
     return render_template('new_home.html')
 
+# ==========================================
+# PROCESS PDF
+# ==========================================
 
 @app.route('/process', methods=['POST'])
 def process_documents():
-    global vectorstore, conversation_chain
 
-    pdf_docs = request.files.getlist('pdf_docs')
-    raw_text = get_pdf_text(pdf_docs)
+    global vectorstore
+    global conversation_chain
 
-    chunks = get_text_chunks(raw_text)
-    vectorstore = get_vectorstore(chunks)
-    conversation_chain = get_conversation_chain(vectorstore)
+    try:
 
-    return redirect('/chat')
+        pdf_docs = request.files.getlist('pdf_docs')
 
+        if not pdf_docs or pdf_docs[0].filename == "":
+            return "No PDF uploaded"
+
+        raw_text = get_pdf_text(pdf_docs)
+
+        if not raw_text.strip():
+            return "No readable text found in PDF"
+
+        text_chunks = get_text_chunks(raw_text)
+
+        if len(text_chunks) == 0:
+            return "No text chunks generated"
+
+        vectorstore = get_vectorstore(text_chunks)
+
+        conversation_chain = get_conversation_chain(vectorstore)
+
+        return redirect('/chat')
+
+    except Exception as e:
+
+        print("Process Error:", e)
+
+        return f"Error: {str(e)}"
+
+# ==========================================
+# CHAT PAGE
+# ==========================================
 
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
-    global chat_history, conversation_chain
 
-    if request.method == 'POST':
-        user_question = request.form['user_question']
-        response = conversation_chain({"question": user_question})
-        chat_history = response["chat_history"]
+    global chat_history
+    global conversation_chain
 
-    return render_template('new_chat.html', chat_history=chat_history)
+    try:
 
+        if request.method == 'POST':
+
+            if conversation_chain is None:
+                return "Please upload PDF first"
+
+            user_question = request.form['user_question']
+
+            response = conversation_chain.invoke({
+                'question': user_question
+            })
+
+            chat_history = response['chat_history']
+
+        return render_template(
+            'new_chat.html',
+            chat_history=chat_history
+        )
+
+    except Exception as e:
+
+        print("Chat Error:", e)
+
+        return f"Chat Error: {str(e)}"
+
+# ==========================================
+# PDF CHAT PAGE
+# ==========================================
 
 @app.route('/pdf_chat')
 def pdf_chat():
+
     return render_template('new_pdf_chat.html')
 
+# ==========================================
+# ESSAY GRADING PAGE
+# ==========================================
 
 @app.route('/essay_grading', methods=['GET', 'POST'])
 def essay_grading():
+
     global rubric_text
 
     result = None
     text = ""
 
-    if request.method == 'POST':
+    try:
 
-        # Save rubric
-        if request.form.get("essay_rubric"):
-            rubric_text = request.form.get("essay_rubric")
-            return render_template('new_essay_grading.html')
+        if request.method == 'POST':
 
-        # PDF input
-        if 'file' in request.files and request.files['file'].filename != "":
-            text = extract_text_from_pdf(request.files['file'])
-        else:
-            text = request.form.get("essay_text")
+            # SAVE RUBRIC
+            if request.form.get("essay_rubric"):
 
-        result = _grade_essay(text)
+                rubric_text = request.form.get("essay_rubric")
 
-    return render_template(
-        'new_essay_grading.html',
-        result=result,
-        input_text=text
-    )
+                return render_template(
+                    'new_essay_grading.html'
+                )
 
+            # PDF FILE
+            if (
+                'file' in request.files and
+                request.files['file'].filename != ""
+            ):
+
+                pdf_file = request.files['file']
+
+                text = extract_text_from_pdf(pdf_file)
+
+            else:
+
+                text = request.form.get("essay_text")
+
+            if text:
+
+                result = grade_essay(text)
+
+            else:
+
+                result = "No essay text found"
+
+        return render_template(
+            'new_essay_grading.html',
+            result=result,
+            input_text=text
+        )
+
+    except Exception as e:
+
+        print("Essay Page Error:", e)
+
+        return f"Essay Error: {str(e)}"
+
+# ==========================================
+# RUBRIC PAGE
+# ==========================================
 
 @app.route('/essay_rubric')
 def essay_rubric():
+
     return render_template('new_essay_rubric.html')
 
-# =========================
-# PDF TEXT EXTRACTION
-# =========================
+# ==========================================
+# PDF EXTRACT FUNCTION
+# ==========================================
+
 def extract_text_from_pdf(pdf_file):
-    pdf_reader = PdfReader(pdf_file)
+
     text = ""
 
-    for page in pdf_reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text += page_text
+    try:
+
+        pdf_reader = PdfReader(pdf_file)
+
+        for page in pdf_reader.pages:
+
+            page_text = page.extract_text()
+
+            if page_text:
+                text += page_text
+
+    except Exception as e:
+
+        print("PDF Extraction Error:", e)
 
     return text
 
-# =========================
+# ==========================================
 # RUN APP
-# =========================
+# ==========================================
+
 if __name__ == '__main__':
+
     app.run(debug=True)
