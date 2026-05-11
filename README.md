@@ -1,5 +1,19 @@
 # Unlocking Knowledge and Empowering Students with AI (Chat Scholar)
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:1A1A2E,50:16213E,100:0F3460&height=240&section=header&text=ChatBot%20Application&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=38&desc=AI%20Powered%20Smart%20Assistant&descAlignY=60&descAlign=50"/>
+</p>
 
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Poppins&size=24&duration=3000&pause=1000&color=00F5FF&center=true&vCenter=true&width=850&lines=AI+ChatBot+Using+OpenAI;Real-Time+Conversation+System;Flask+%7C+Python+%7C+LangChain;PDF+Chat+%26+Essay+Grading;Smart+AI+Assistant"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white"/>
+  <img src="https://img.shields.io/badge/OpenAI-10A37F?style=for-the-badge&logo=openai&logoColor=white"/>
+  <img src="https://img.shields.io/badge/LangChain-121D33?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/AI%20ChatBot-FF6B00?style=for-the-badge"/>
+</p>
 ## Problem Statement:
 In today's digital age, students are inundated with information from textbooks, research papers, and online resources. Navigating this vast sea of knowledge and extracting meaningful insights can be overwhelming. Chat Scholar addresses this challenge by providing an AI-powered platform that simplifies academic learning and enhances the writing process.
 Context:
