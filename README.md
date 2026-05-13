@@ -35,7 +35,7 @@ How it works:
 -	Rubric Selection: Students can choose from pre-defined rubrics (e.g., IELTS, TOEFL) or upload custom rubrics created by their teachers.
 - Essay Evaluation: The rubric tool analyses the student's essay against the selected rubric's criteria.
 - Feedback Generation: Based on the analysis, Chat Scholar provides feedback on the essay's strengths and areas for improvement, highlighting specific criteria met or not met.
-Key Inputs: 
+## Key Inputs: 
 For this particular project, we would need the below key inputs:
 - Chat Scholar
 - Upload the document (pdf) for which you want chat bot.
