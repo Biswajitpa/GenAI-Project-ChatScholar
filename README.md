@@ -32,16 +32,16 @@ How it works:
 2.	Text Embedding and Semantic Search: The extracted text is processed, embeddings are generated, and a semantic search engine (using FAISS) allows for efficient retrieval of relevant information.
 3.	Question Answering: Students' questions are processed, compared to the indexed content, and the most relevant information is used to generate a comprehensive answer using the OpenAI LLM.
 4.	Essay Grading Rubric:
-•	Rubric Selection: Students can choose from pre-defined rubrics (e.g., IELTS, TOEFL) or upload custom rubrics created by their teachers.
-•	Essay Evaluation: The rubric tool analyses the student's essay against the selected rubric's criteria.
-•	Feedback Generation: Based on the analysis, Chat Scholar provides feedback on the essay's strengths and areas for improvement, highlighting specific criteria met or not met.
+-	Rubric Selection: Students can choose from pre-defined rubrics (e.g., IELTS, TOEFL) or upload custom rubrics created by their teachers.
+- Essay Evaluation: The rubric tool analyses the student's essay against the selected rubric's criteria.
+- Feedback Generation: Based on the analysis, Chat Scholar provides feedback on the essay's strengths and areas for improvement, highlighting specific criteria met or not met.
 Key Inputs: 
 For this particular project, we would need the below key inputs:
-•	Chat Scholar
-o	Upload the document (pdf) for which you want chat bot.
-•	Essay Grading Rubric
-o	Choose the pre-defined rubric (IELTS/TOEFL) or upload the custom rubric.
-o	The rubric tool analyses the student's essay against the selected rubric's criteria.
+- Chat Scholar
+- Upload the document (pdf) for which you want chat bot.
+- Essay Grading Rubric
+- Choose the pre-defined rubric (IELTS/TOEFL) or upload the custom rubric.
+- The rubric tool analyses the student's essay against the selected rubric's criteria.
 
 ## Architecture:
 
